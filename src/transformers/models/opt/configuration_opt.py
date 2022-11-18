@@ -112,6 +112,7 @@ class OPTConfig(PretrainedConfig):
         pad_token_id=1,
         bos_token_id=2,
         eos_token_id=2,
+        tp_parallel=False,
         **kwargs
     ):
         super().__init__(
@@ -139,3 +140,4 @@ class OPTConfig(PretrainedConfig):
         # with checkpoints that have been fine-tuned before transformers v4.20.1
         # see https://github.com/facebookresearch/metaseq/pull/164
         self._remove_final_layer_norm = _remove_final_layer_norm
+        self.tp_parallel = tp_parallel
