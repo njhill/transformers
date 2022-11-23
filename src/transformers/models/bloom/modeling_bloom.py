@@ -15,6 +15,7 @@
 """PyTorch BLOOM model."""
 
 import math
+import os
 import warnings
 from typing import Optional, Tuple, Union
 
@@ -40,13 +41,16 @@ from .parallel_layers import TensorParallelColumnLinear, TensorParallelEmbedding
 
 logger = logging.get_logger(__name__)
 
+disable_kernels = 'DISABLE_CUSTOM_KERNELS' in os.environ
+
 CUSTOM_KERNELS_ENABLED=False
-try:
-    from .custom_kernels import fused_bloom_attention_cuda
-    from .custom_kernels import fused_bloom_gelu_cuda
-    CUSTOM_KERNELS_ENABLED=True
-except ImportError:
-    logger.warning("We're not using custom kernels.")
+if not disable_kernels:
+    try:
+        from .custom_kernels import fused_bloom_attention_cuda
+        from .custom_kernels import fused_bloom_gelu_cuda
+        CUSTOM_KERNELS_ENABLED=True
+    except ImportError as e:
+        logger.warning("We're not using custom kernels.")
 
 _CHECKPOINT_FOR_DOC = "bigscience/bloom-560m"
 _CONFIG_FOR_DOC = "BloomConfig"
@@ -342,8 +346,8 @@ class BloomAttention(nn.Module):
                 use_cache
             )
         else:
-            if torch.cuda.is_available():
-                raise ValueError("You must build the cuda kernel with: `python setup.py build_ext --inplace`")
+            #if torch.cuda.is_available():
+            #    raise ValueError("You must build the cuda kernel with: `python setup.py build_ext --inplace`")
             context_layer, present, attention_probs = self.compute_attention(
                 fused_qkv=fused_qkv,
                 layer_past=layer_past,
