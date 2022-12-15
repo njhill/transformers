@@ -73,6 +73,7 @@ import shutil
 from distutils.core import Command
 from pathlib import Path
 
+import torch.cuda
 from setuptools import find_packages, setup
 
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
@@ -92,7 +93,6 @@ if stale_egg_info.exists():
         ).format(stale_egg_info)
     )
     shutil.rmtree(stale_egg_info)
-
 
 # IMPORTANT:
 # 1. all dependencies should be listed here with their version requirements if any
@@ -180,7 +180,6 @@ _deps = [
     "pyknp>=0.6.1",
 ]
 
-
 # this is a lookup table with items like:
 #
 # tokenizers: "tokenizers==0.9.4"
@@ -188,6 +187,7 @@ _deps = [
 #
 # some of the values are versioned whereas others aren't.
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
+
 
 # since we save this data in src/transformers/dependency_versions_table.py it can be easily accessed from
 # anywhere. If you need to quickly access the data from this table in a shell, you can do so easily with:
@@ -289,33 +289,32 @@ extras["timm"] = deps_list("timm")
 extras["natten"] = deps_list("natten")
 extras["codecarbon"] = deps_list("codecarbon")
 
-
 extras["sentencepiece"] = deps_list("sentencepiece", "protobuf")
 extras["testing"] = (
-    deps_list(
-        "pytest",
-        "pytest-xdist",
-        "timeout-decorator",
-        "parameterized",
-        "psutil",
-        "datasets",
-        "dill",
-        "evaluate",
-        "pytest-timeout",
-        "black",
-        "sacrebleu",
-        "rouge-score",
-        "nltk",
-        "GitPython",
-        "hf-doc-builder",
-        "protobuf",  # Can be removed once we can unpin protobuf
-        "sacremoses",
-        "rjieba",
-        "safetensors",
-        "beautifulsoup4",
-    )
-    + extras["retrieval"]
-    + extras["modelcreation"]
+        deps_list(
+            "pytest",
+            "pytest-xdist",
+            "timeout-decorator",
+            "parameterized",
+            "psutil",
+            "datasets",
+            "dill",
+            "evaluate",
+            "pytest-timeout",
+            "black",
+            "sacrebleu",
+            "rouge-score",
+            "nltk",
+            "GitPython",
+            "hf-doc-builder",
+            "protobuf",  # Can be removed once we can unpin protobuf
+            "sacremoses",
+            "rjieba",
+            "safetensors",
+            "beautifulsoup4",
+        )
+        + extras["retrieval"]
+        + extras["modelcreation"]
 )
 
 extras["deepspeed-testing"] = extras["deepspeed"] + extras["testing"] + extras["optuna"]
@@ -323,17 +322,17 @@ extras["deepspeed-testing"] = extras["deepspeed"] + extras["testing"] + extras["
 extras["quality"] = deps_list("black", "datasets", "isort", "flake8", "GitPython", "hf-doc-builder")
 
 extras["all"] = (
-    extras["tf"]
-    + extras["torch"]
-    + extras["flax"]
-    + extras["sentencepiece"]
-    + extras["tokenizers"]
-    + extras["torch-speech"]
-    + extras["vision"]
-    + extras["integrations"]
-    + extras["timm"]
-    + extras["codecarbon"]
-    + extras["accelerate"]
+        extras["tf"]
+        + extras["torch"]
+        + extras["flax"]
+        + extras["sentencepiece"]
+        + extras["tokenizers"]
+        + extras["torch-speech"]
+        + extras["vision"]
+        + extras["integrations"]
+        + extras["timm"]
+        + extras["codecarbon"]
+        + extras["accelerate"]
 )
 
 # Might need to add doc-builder and some specific deps in the future
@@ -343,43 +342,43 @@ extras["docs_specific"] = ["hf-doc-builder"]
 extras["docs"] = extras["all"] + extras["docs_specific"]
 
 extras["dev-torch"] = (
-    extras["testing"]
-    + extras["torch"]
-    + extras["sentencepiece"]
-    + extras["tokenizers"]
-    + extras["torch-speech"]
-    + extras["vision"]
-    + extras["integrations"]
-    + extras["timm"]
-    + extras["codecarbon"]
-    + extras["quality"]
-    + extras["ja"]
-    + extras["docs_specific"]
-    + extras["sklearn"]
-    + extras["modelcreation"]
-    + extras["onnxruntime"]
+        extras["testing"]
+        + extras["torch"]
+        + extras["sentencepiece"]
+        + extras["tokenizers"]
+        + extras["torch-speech"]
+        + extras["vision"]
+        + extras["integrations"]
+        + extras["timm"]
+        + extras["codecarbon"]
+        + extras["quality"]
+        + extras["ja"]
+        + extras["docs_specific"]
+        + extras["sklearn"]
+        + extras["modelcreation"]
+        + extras["onnxruntime"]
 )
 extras["dev-tensorflow"] = (
-    extras["testing"]
-    + extras["tf"]
-    + extras["sentencepiece"]
-    + extras["tokenizers"]
-    + extras["vision"]
-    + extras["quality"]
-    + extras["docs_specific"]
-    + extras["sklearn"]
-    + extras["modelcreation"]
-    + extras["onnx"]
-    + extras["tf-speech"]
+        extras["testing"]
+        + extras["tf"]
+        + extras["sentencepiece"]
+        + extras["tokenizers"]
+        + extras["vision"]
+        + extras["quality"]
+        + extras["docs_specific"]
+        + extras["sklearn"]
+        + extras["modelcreation"]
+        + extras["onnx"]
+        + extras["tf-speech"]
 )
 extras["dev"] = (
-    extras["all"]
-    + extras["testing"]
-    + extras["quality"]
-    + extras["ja"]
-    + extras["docs_specific"]
-    + extras["sklearn"]
-    + extras["modelcreation"]
+        extras["all"]
+        + extras["testing"]
+        + extras["quality"]
+        + extras["ja"]
+        + extras["docs_specific"]
+        + extras["sklearn"]
+        + extras["modelcreation"]
 )
 
 extras["torchhub"] = deps_list(
@@ -410,12 +409,14 @@ install_requires = [
     deps["tokenizers"],
     deps["tqdm"],  # progress bars in model download and training scripts
 ]
+
+
 def get_extensions():
     # TODO @thomasw21 add cpp versions
     extensions = []
 
     # TODO @thomasw21 build cuda kernels only on some conditions
-    if True:
+    if torch.cuda.is_available():
         extensions += [
             CUDAExtension(
                 name="transformers.models.bloom.custom_kernels.fused_bloom_attention_cuda",
@@ -435,6 +436,13 @@ def get_extensions():
             ),
         ]
     return extensions
+
+
+cmdclass = {
+    "deps_table_update": DepsTableUpdateCommand,
+}
+if torch.cuda.is_available():
+    cmdclass["build_ext"] = BuildExtension
 
 setup(
     name="transformers",
@@ -469,8 +477,5 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     ext_modules=get_extensions(),
-    cmdclass={
-        "deps_table_update": DepsTableUpdateCommand,
-        "build_ext": BuildExtension
-    },
+    cmdclass=cmdclass,
 )
