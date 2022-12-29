@@ -37,7 +37,6 @@ from ...modeling_outputs import (
 from ...modeling_utils import PreTrainedModel
 from ...utils import logging
 from .configuration_bloom import BloomConfig
-from .parallel_layers import TensorParallelColumnLinear, TensorParallelEmbedding, TensorParallelRowLinear
 
 logger = logging.get_logger(__name__)
 
@@ -235,6 +234,7 @@ class BloomAttention(nn.Module):
             self.query_key_value = nn.Linear(self.hidden_size, 3 * self.hidden_size, bias=True)
             self.dense = nn.Linear(self.hidden_size, self.hidden_size)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             assert self.num_heads % process_group.size() == 0
             self.num_heads = self.num_heads // process_group.size()
             self.query_key_value = TensorParallelColumnLinear(self.hidden_size, 3 * self.hidden_size, process_group=process_group, bias=True)
@@ -393,6 +393,7 @@ class BloomMLP(nn.Module):
             self.dense_h_to_4h = nn.Linear(hidden_size, 4 * hidden_size)
             self.dense_4h_to_h = nn.Linear(4 * hidden_size, hidden_size)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             self.dense_h_to_4h = TensorParallelColumnLinear(hidden_size, 4 * hidden_size, process_group=process_group)
             self.dense_4h_to_h = TensorParallelRowLinear(4 * hidden_size, hidden_size, process_group=process_group)
         self.gelu_impl = torch.nn.GELU(approximate="tanh")
@@ -649,6 +650,7 @@ class BloomModel(BloomPreTrainedModel):
         if process_group is None:
             self.word_embeddings = nn.Embedding(config.vocab_size, self.embed_dim)
         else:
+            from .parallel_layers import TensorParallelEmbedding
             self.word_embeddings = TensorParallelEmbedding(config.vocab_size, self.embed_dim, process_group=process_group)
             self.tp_rank = process_group.rank()
             self.tp_world_size = process_group.size()
