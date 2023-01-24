@@ -78,6 +78,8 @@ from setuptools import find_packages, setup
 
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
+BUILD_EXTENSIONS = (os.environ.get("BUILD_EXTENSIONS", "False") == "True") | torch.cuda.is_available()
+
 # Remove stale transformers.egg-info directory to avoid https://github.com/pypa/pip/issues/5466
 
 stale_egg_info = Path(__file__).parent / "transformers.egg-info"
@@ -416,7 +418,7 @@ def get_extensions():
     extensions = []
 
     # TODO @thomasw21 build cuda kernels only on some conditions
-    if torch.cuda.is_available():
+    if BUILD_EXTENSIONS:
         extensions += [
             CUDAExtension(
                 name="transformers.models.bloom.custom_kernels.fused_bloom_attention_cuda",
@@ -441,7 +443,7 @@ def get_extensions():
 cmdclass = {
     "deps_table_update": DepsTableUpdateCommand,
 }
-if torch.cuda.is_available():
+if BUILD_EXTENSIONS:
     cmdclass["build_ext"] = BuildExtension
 
 setup(
