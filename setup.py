@@ -74,7 +74,6 @@ import re
 import shutil
 from pathlib import Path
 
-import torch.cuda
 from setuptools import Command, find_packages, setup
 
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
@@ -436,7 +435,7 @@ def get_extensions():
     extensions = []
 
     # TODO @thomasw21 build cuda kernels only on some conditions
-    if torch.cuda.is_available():
+    if True:
         extensions += [
             CUDAExtension(
                 name="transformers.models.bloom.custom_kernels.fused_bloom_attention_cuda",
@@ -457,12 +456,6 @@ def get_extensions():
         ]
     return extensions
 
-
-cmdclass = {
-    "deps_table_update": DepsTableUpdateCommand,
-}
-if torch.cuda.is_available():
-    cmdclass["build_ext"] = BuildExtension
 
 setup(
     name="transformers",
@@ -499,5 +492,8 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     ext_modules=get_extensions(),
-    cmdclass=cmdclass,
+    cmdclass={
+        "deps_table_update": DepsTableUpdateCommand,
+        "build_ext": BuildExtension
+    },
 )
