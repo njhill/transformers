@@ -78,7 +78,7 @@ from setuptools import find_packages, setup
 
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
-BUILD_EXTENSIONS = os.environ.get("BUILD_EXTENSIONS", False) | torch.cuda.is_available()
+BUILD_EXTENSIONS = (os.environ.get("BUILD_EXTENSIONS", "False") == "True") | torch.cuda.is_available()
 
 # Remove stale transformers.egg-info directory to avoid https://github.com/pypa/pip/issues/5466
 
@@ -247,6 +247,7 @@ class DepsTableUpdateCommand(Command):
         with open(target, "w", encoding="utf-8", newline="\n") as f:
             f.write("\n".join(content))
 
+
 extras = {}
 
 extras["ja"] = deps_list("fugashi", "ipadic", "unidic_lite", "unidic", "sudachipy", "sudachidict_core", "rhoknp")
@@ -326,18 +327,18 @@ extras["deepspeed-testing"] = extras["deepspeed"] + extras["testing"] + extras["
 extras["quality"] = deps_list("black", "datasets", "isort", "flake8", "GitPython", "hf-doc-builder")
 
 extras["all"] = (
-    extras["tf"]
-    + extras["torch"]
-    + extras["flax"]
-    + extras["sentencepiece"]
-    + extras["tokenizers"]
-    + extras["torch-speech"]
-    + extras["vision"]
-    + extras["integrations"]
-    + extras["timm"]
-    + extras["codecarbon"]
-    + extras["accelerate"]
-    + extras["video"]
+        extras["tf"]
+        + extras["torch"]
+        + extras["flax"]
+        + extras["sentencepiece"]
+        + extras["tokenizers"]
+        + extras["torch-speech"]
+        + extras["vision"]
+        + extras["integrations"]
+        + extras["timm"]
+        + extras["codecarbon"]
+        + extras["accelerate"]
+        + extras["video"]
 )
 
 # Might need to add doc-builder and some specific deps in the future
