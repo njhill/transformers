@@ -48,7 +48,7 @@ if not disable_kernels:
         from .custom_kernels import fused_bloom_attention_cuda
         from .custom_kernels import fused_bloom_gelu_cuda
         CUSTOM_KERNELS_ENABLED=True
-    except ImportError as e:
+    except ImportError:
         logger.warning("We're not using custom kernels.")
 
 _CHECKPOINT_FOR_DOC = "bigscience/bloom-560m"
@@ -341,8 +341,6 @@ class BloomAttention(nn.Module):
                 use_cache
             )
         else:
-            #if torch.cuda.is_available():
-            #    raise ValueError("You must build the cuda kernel with: `python setup.py build_ext --inplace`")
             context_layer, present, attention_probs = self.compute_attention(
                 fused_qkv=fused_qkv,
                 layer_past=layer_past,
