@@ -39,7 +39,6 @@ from ...modeling_outputs import (
 from ...modeling_utils import PreTrainedModel
 from ...utils import logging
 from .configuration_gpt_neox import GPTNeoXConfig
-from .parallel_layers import TensorParallelColumnLinear, TensorParallelEmbedding, TensorParallelRowLinear
 
 logger = logging.get_logger(__name__)
 
@@ -161,6 +160,7 @@ class GPTNeoXAttention(nn.Module):
             self.query_key_value = nn.Linear(config.hidden_size, 3 * config.hidden_size)
             self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             assert self.num_attention_heads % process_group.size() == 0
             self.num_attention_heads = self.num_attention_heads // process_group.size()
             self.query_key_value = TensorParallelColumnLinear(self.hidden_size, 3 * self.hidden_size, process_group=process_group, bias=True)
@@ -352,6 +352,7 @@ class GPTNeoXMLP(nn.Module):
             self.dense_h_to_4h = nn.Linear(config.hidden_size, config.intermediate_size)
             self.dense_4h_to_h = nn.Linear(config.intermediate_size, config.hidden_size)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             self.dense_h_to_4h = TensorParallelColumnLinear(config.hidden_size, config.intermediate_size, process_group=process_group)
             self.dense_4h_to_h = TensorParallelRowLinear(config.intermediate_size, config.hidden_size, process_group=process_group)
 
@@ -482,6 +483,7 @@ class GPTNeoXModel(GPTNeoXPreTrainedModel):
         if process_group is None:
             self.embed_in = nn.Embedding(config.vocab_size, config.hidden_size)
         else:
+            from .parallel_layers import TensorParallelEmbedding
             self.embed_in = TensorParallelEmbedding(config.vocab_size, config.hidden_size, process_group=process_group)
             self.tp_rank = process_group.rank()
             self.tp_world_size = process_group.size()
