@@ -75,7 +75,6 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 BUILD_EXTENSIONS = os.environ.get("BUILD_EXTENSIONS", "False") == "True"
 
@@ -427,6 +426,7 @@ def get_extensions():
 
     # TODO @thomasw21 build cuda kernels only on some conditions
     if BUILD_EXTENSIONS:
+        from torch.utils.cpp_extension import CUDAExtension
         extensions += [
             CUDAExtension(
                 name="transformers.models.bloom.custom_kernels.fused_bloom_attention_cuda",
@@ -452,6 +452,7 @@ cmdclass = {
     "deps_table_update": DepsTableUpdateCommand,
 }
 if BUILD_EXTENSIONS:
+    from torch.utils.cpp_extension import BuildExtension
     cmdclass["build_ext"] = BuildExtension
 
 setup(
