@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ PyTorch GPTNeoX model."""
-
+import os
 from typing import Optional, Tuple, Union
 
 import torch
@@ -36,12 +36,15 @@ from .configuration_gpt_neox import GPTNeoXConfig
 
 logger = logging.get_logger(__name__)
 
+disable_kernels = 'DISABLE_CUSTOM_KERNELS' in os.environ
+
 CUSTOM_KERNELS_ENABLED=False
-try:
-    from .custom_kernels import fused_attention_cuda
-    CUSTOM_KERNELS_ENABLED=True
-except ImportError:
-    logger.warning("We're not using custom kernels.")
+if not disable_kernels:
+    try:
+        from .custom_kernels import fused_attention_cuda
+        CUSTOM_KERNELS_ENABLED=True
+    except ImportError:
+        logger.warning("We're not using custom kernels.")
 
 _CHECKPOINT_FOR_DOC = "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
 _REAL_CHECKPOINT_FOR_DOC = "EleutherAI/gpt-neox-20b"
