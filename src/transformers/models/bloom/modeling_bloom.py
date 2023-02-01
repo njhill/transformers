@@ -46,7 +46,6 @@ CUSTOM_KERNELS_ENABLED=False
 if not disable_kernels:
     try:
         from .custom_kernels import fused_bloom_attention_cuda
-        from .custom_kernels import fused_bloom_gelu_cuda
         CUSTOM_KERNELS_ENABLED=True
     except ImportError:
         logger.warning("We're not using custom kernels.")
@@ -582,7 +581,7 @@ BLOOM_INPUTS_DOCSTRING = r"""
             If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
             `input_ids`.
 
-            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            Indices can be obtained using [`BloomTokenizerFast`]. See [`PreTrainedTokenizer.encode`] and
             [`PreTrainedTokenizer.__call__`] for details.
 
             [What are input IDs?](../glossary#input-ids)
