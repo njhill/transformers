@@ -169,7 +169,8 @@ class CodeGenAttention(nn.Module):
         hidden_states: Optional[torch.FloatTensor],
         layer_past: Optional[Tuple[torch.Tensor]] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
-        position_ids: Optional[torch.FloatTensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        position_embeds: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = False,
         output_attentions: Optional[bool] = False,
@@ -190,12 +191,15 @@ class CodeGenAttention(nn.Module):
         value = self._split_heads(value, self.num_attention_heads, self.head_dim, mp_num=mp_num)
         value = value.permute(0, 2, 1, 3)
 
-        embed_positions = self.embed_positions
-        if embed_positions.device != position_ids.device:
-            embed_positions = embed_positions.to(position_ids.device)
-            self.embed_positions = embed_positions
+        if position_embeds is not None:
+            sincos = position_embeds
+        else:
+            embed_positions = self.embed_positions
+            if embed_positions.device != position_ids.device:
+                embed_positions = embed_positions.to(position_ids.device)
+                self.embed_positions = embed_positions
 
-        sincos = embed_positions[position_ids]
+            sincos = embed_positions[position_ids]
         sincos = torch.split(sincos, sincos.shape[-1] // 2, dim=-1)
 
         if self.rotary_dim is not None:
@@ -276,7 +280,8 @@ class CodeGenBlock(nn.Module):
         hidden_states: Optional[torch.FloatTensor],
         layer_past: Optional[Tuple[torch.Tensor]] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
-        position_ids: Optional[torch.FloatTensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        position_embeds: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = False,
         output_attentions: Optional[bool] = False,
@@ -288,6 +293,7 @@ class CodeGenBlock(nn.Module):
             layer_past=layer_past,
             attention_mask=attention_mask,
             position_ids=position_ids,
+            position_embeds=position_embeds,
             head_mask=head_mask,
             use_cache=use_cache,
             output_attentions=output_attentions,
@@ -442,6 +448,7 @@ class CodeGenModel(CodeGenPreTrainedModel):
         attention_mask: Optional[torch.FloatTensor] = None,
         token_type_ids: Optional[torch.LongTensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
+        position_embeds: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = None,
@@ -482,7 +489,7 @@ class CodeGenModel(CodeGenPreTrainedModel):
         else:
             past_length = past_key_values[0][0].size(-2)
 
-        if position_ids is None:
+        if position_ids is None and position_embeds is None:
             position_ids = torch.arange(past_length, input_shape[-1] + past_length, dtype=torch.long, device=device)
             position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])
 
@@ -555,6 +562,7 @@ class CodeGenModel(CodeGenPreTrainedModel):
                     None,
                     attention_mask,
                     position_ids,
+                    position_embeds,
                     head_mask[i],
                 )
             else:
@@ -563,6 +571,7 @@ class CodeGenModel(CodeGenPreTrainedModel):
                     layer_past=layer_past,
                     attention_mask=attention_mask,
                     position_ids=position_ids,
+                    position_embeds=position_embeds,
                     head_mask=head_mask[i],
                     use_cache=use_cache,
                     output_attentions=output_attentions,
@@ -656,6 +665,7 @@ class CodeGenForCausalLM(CodeGenPreTrainedModel):
         attention_mask: Optional[torch.FloatTensor] = None,
         token_type_ids: Optional[torch.LongTensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
+        position_embeds: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
@@ -678,6 +688,7 @@ class CodeGenForCausalLM(CodeGenPreTrainedModel):
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
+            position_embeds=position_embeds,
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             use_cache=use_cache,
