@@ -474,6 +474,12 @@ class CodeGenModel(CodeGenPreTrainedModel):
 
         if position_ids is not None:
             position_ids = position_ids.view(-1, input_shape[-1]).long()
+        elif attention_mask is not None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values is not None:
+                position_ids = position_ids[:, -1].unsqueeze(-1)
 
         if past_key_values is None:
             past_length = 0
@@ -624,20 +630,12 @@ class CodeGenForCausalLM(CodeGenPreTrainedModel):
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
 
         attention_mask = kwargs.get("attention_mask", None)
-        position_ids = kwargs.get("position_ids", None)
-
-        if attention_mask is not None and position_ids is None:
-            # create position_ids on the fly for batch generation
-            position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids.masked_fill_(attention_mask == 0, 1)
-            if past_key_values:
-                position_ids = position_ids[:, -1].unsqueeze(-1)
 
         return {
             "input_ids": input_ids,
             "past_key_values": past_key_values,
             "use_cache": kwargs.get("use_cache"),
-            "position_ids": position_ids,
+            "position_ids": kwargs.get("position_ids", None),
             "attention_mask": attention_mask,
             "token_type_ids": token_type_ids,
         }
