@@ -46,7 +46,7 @@ from ...utils import (
 )
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_t5 import T5Config
-from .parallel_layers import TensorParallelColumnLinear, TensorParallelEmbedding, TensorParallelRowLinear
+
 
 logger = logging.get_logger(__name__)
 
@@ -286,6 +286,7 @@ class T5DenseActDense(nn.Module):
             self.wi = nn.Linear(config.d_model, config.d_ff, bias=False)
             self.wo = nn.Linear(config.d_ff, config.d_model, bias=False)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             self.wi = TensorParallelColumnLinear(config.d_model, config.d_ff, bias=False,
                                                  process_group=process_group)
             self.wo = TensorParallelRowLinear(config.d_ff, config.d_model, bias=False,
@@ -317,6 +318,7 @@ class T5DenseGatedActDense(nn.Module):
             self.wi_1 = nn.Linear(config.d_model, config.d_ff, bias=False)
             self.wo = nn.Linear(config.d_ff, config.d_model, bias=False)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             self.wi_0 = TensorParallelColumnLinear(config.d_model, config.d_ff, bias=False,
                                                    process_group=process_group)
             self.wi_1 = TensorParallelColumnLinear(config.d_model, config.d_ff, bias=False,
@@ -386,6 +388,7 @@ class T5Attention(nn.Module):
             self.v = nn.Linear(self.d_model, self.inner_dim, bias=False)
             self.o = nn.Linear(self.inner_dim, self.d_model, bias=False)
         else:
+            from .parallel_layers import TensorParallelColumnLinear, TensorParallelRowLinear
             assert self.n_heads % process_group.size() == 0
             self.q = TensorParallelColumnLinear(self.d_model, self.inner_dim, bias=False, process_group=process_group)
             self.k = TensorParallelColumnLinear(self.d_model, self.inner_dim, bias=False, process_group=process_group)
@@ -1573,6 +1576,7 @@ class T5ForConditionalGeneration(T5PreTrainedModel):
         if process_group is None:
             self.shared = nn.Embedding(config.vocab_size, config.d_model)
         else:
+            from .parallel_layers import TensorParallelEmbedding
             self.shared = TensorParallelEmbedding(config.vocab_size, config.d_model, process_group)
 
         encoder_config = copy.deepcopy(config)
